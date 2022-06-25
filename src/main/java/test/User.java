@@ -8,6 +8,8 @@ import org.eclipse.microprofile.graphql.Ignore;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.time.temporal.ChronoUnit.YEARS;
 
@@ -17,6 +19,13 @@ public class User {
     int id;
     String name;
     LocalDate birthDate;
+    List<User> friends;
+
+    public User addFriend(User friend) {
+        if (friends == null) friends = new ArrayList<>();
+        friends.add(friend);
+        return this;
+    }
 
     @Ignore public Integer getAge() {
         var age = (int) Period.between(birthDate, LocalDate.now()).get(YEARS);

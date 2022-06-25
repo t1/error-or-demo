@@ -9,6 +9,8 @@ import lombok.experimental.SuperBuilder;
 import org.eclipse.microprofile.graphql.Query;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.BDDAssertions.then;
 
 class UserTest {
@@ -21,21 +23,39 @@ class UserTest {
     public static class User {
         String name;
         ErrorOr<Integer> age;
+        List<User2> friends;
+    }
+
+    @Data @SuperBuilder @NoArgsConstructor
+    public static class User2 {
+        String name;
+        ErrorOr<Integer> age;
+        List<User3> friends;
+    }
+
+    @Data @SuperBuilder @NoArgsConstructor
+    public static class User3 {
+        String name;
+        ErrorOr<Integer> age;
     }
 
     Users users = TypesafeGraphQLClientBuilder.newBuilder().endpoint("http://localhost:8080/graphql").build(Users.class);
 
-    @Test void shouldGetMe() {
-        var me = users.user(1);
+    @Test void shouldGetJane() {
+        var jane = users.user(1);
 
-        then(me.name).isEqualTo("Jane Doe");
-        then(me.age.get()).isEqualTo(73);
+        then(jane.name).isEqualTo("Jane");
+        then(jane.age.get()).isEqualTo(73);
+        then(jane.friends).hasSize(2)
+            .map(User2::getName).containsExactly("Jannet", "James");
+        then(jane.friends.get(0).friends).hasSize(1)
+            .map(User3::getName).containsExactly("Jane");
     }
 
     @Test void shouldGetMethuselah() {
         var me = users.user(34567);
 
-        then(me.name).isEqualTo("Jane Doe");
+        then(me.name).isEqualTo("Jane");
         then(me.age.isPresent()).isFalse();
         var error = me.age.getErrors().get(0);
         then(error.getCode()).isEqualTo("invalid-age");
@@ -45,7 +65,7 @@ class UserTest {
     @Test void shouldGetUnborn() {
         var me = users.user(-34567);
 
-        then(me.name).isEqualTo("Jane Doe");
+        then(me.name).isEqualTo("Jane");
         then(me.age.isPresent()).isFalse();
         var error = me.age.getErrors().get(0);
         then(error.getCode()).isEqualTo("invalid-age");
