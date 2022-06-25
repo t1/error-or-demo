@@ -1,5 +1,7 @@
 package test;
 
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.graphql.client.typesafe.api.ErrorOr;
 import io.smallrye.graphql.client.typesafe.api.GraphQLClientApi;
 import io.smallrye.graphql.client.typesafe.api.TypesafeGraphQLClientBuilder;
@@ -9,10 +11,12 @@ import lombok.experimental.SuperBuilder;
 import org.eclipse.microprofile.graphql.Query;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
 import java.util.List;
 
 import static org.assertj.core.api.BDDAssertions.then;
 
+@QuarkusTest
 class UserTest {
 
     @GraphQLClientApi interface Users {
@@ -39,10 +43,13 @@ class UserTest {
         ErrorOr<Integer> age;
     }
 
-    Users users = TypesafeGraphQLClientBuilder.newBuilder().endpoint("http://localhost:8080/graphql").build(Users.class);
+    @TestHTTPResource("graphql")
+    URI uri;
+
+    Users users() {return TypesafeGraphQLClientBuilder.newBuilder().endpoint(uri).build(Users.class);}
 
     @Test void shouldGetJane() {
-        var jane = users.user(1);
+        var jane = users().user(1);
 
         then(jane.name).isEqualTo("Jane");
         then(jane.age.get()).isEqualTo(73);
@@ -53,7 +60,7 @@ class UserTest {
     }
 
     @Test void shouldGetMethuselah() {
-        var me = users.user(34567);
+        var me = users().user(34567);
 
         then(me.name).isEqualTo("Jane");
         then(me.age.isPresent()).isFalse();
@@ -63,7 +70,7 @@ class UserTest {
     }
 
     @Test void shouldGetUnborn() {
-        var me = users.user(-34567);
+        var me = users().user(-34567);
 
         then(me.name).isEqualTo("Jane");
         then(me.age.isPresent()).isFalse();
